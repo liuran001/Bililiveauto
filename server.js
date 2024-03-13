@@ -4,7 +4,6 @@ const express = require('express');
 const app = express();
 const processFile = require('./processFile')
 const appriseNotice = require("./apprise")
-const db = require('./database'); // 引入数据库
 
 const PORT = process.env.port || 8081;
 
