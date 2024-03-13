@@ -30,28 +30,23 @@ function deleteFile(filePath) {
 }
 
 async function processFile(filepath) {
-  // 从绝对路径获取相对路径
-  const pathComponents = filepath.split('/'); // 分割整个文件路径
-  const relativeFilePath = pathComponents.slice(-3).join('/'); // 获取相对路径，包括文件名和上一级两级目录
-
-  // 解析 roomid 和 name
-  const roomInfo = pathComponents[pathComponents.length - 2]; // 获取 'roomid - uname' 部分
-  const roomidMatch = roomInfo.match(/\b\d+\b/); // 正则表达式查找数字（roomid）
-  const roomid = roomidMatch ? roomidMatch[0] : 'Unknown'; // 提取 roomid 或使用 'Unknown'
-  const name = roomInfo.split(' - ').pop(); // 假设 name 是 ' - ' 后面的部分
+  // 从绝对路径获取相对路径部分
+  const pathComponents = filepath.split('/');
+  const roomAndName = pathComponents[2]; // '26630186 - 烈火游戏机娱乐'
+  const roomid = roomAndName.split(' - ')[0]; // '26630186'
+  const name = roomAndName.split(' - ')[1]; // '烈火游戏机娱乐'
 
   // 解析日期和时间
-  const filename = pathComponents.pop(); // 获取最后一个部分：文件名
-  const dateTimePart = filename.split('_').pop().replace('.mp4', ''); // 从文件名获取日期时间部分，去除扩展名
-  const [year, month, day, rest] = dateTimePart.split('-'); // 按破折号分割日期时间
+  const filename = pathComponents[pathComponents.length - 1]; // 文件名部分
+  const dateTimePart = filename.split('_').slice(-1)[0].split('.')[0]; // '2024-03-14-020708'
+  const [year, month, day, rest] = dateTimePart.split('-'); // 提取日期和时间
   const hour = rest.substring(0, 2);
   const minute = rest.substring(2, 4);
   const second = rest.substring(4, 6);
   const timeid = `${year}年${month}月${day}日${hour}时${minute}分${second}秒`;
 
   console.log(`Room ID: ${roomid}, Name: ${name}, Time ID: ${timeid}`);
-  console.log(`Relative File Path: ${relativeFilePath}`);
-
+  console.log(`Relative File Path: ${filepath}`);
 
     /**
      * 上传指定格式的文件到rclone
