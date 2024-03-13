@@ -30,33 +30,29 @@ function deleteFile(filePath) {
 }
 
 async function processFile(filepath) {
-  // 解析 roomid 和 name
-  const pathComponents = filepath.split('/');
-  const fileInfo = pathComponents[pathComponents.length - 2]; // 获取 'roomid - uname' 部分
-  const [roomid, name] = fileInfo.split(' - '); // 分别解析出 roomid 和 uname
+  // 从绝对路径中移除前缀部分（例如 '/rec/'），保留之后的部分作为 relativeFilePath
+  const relativeFilePath = filepath.substring(filepath.indexOf('/rec/') + 5); // '+ 5' 是为了跳过 '/rec/' 部分
+
+  // 移除文件扩展名来获取 filepathNoExtension
+  const filepathNoExtension = relativeFilePath.split('.').slice(0, -1).join('.'); // 移除最后的扩展名部分
+
+  // 从 relativeFilePath 获取 roomid 和 name
+  const roomAndName = relativeFilePath.split('/')[0]; // '26630186 - 烈火游戏机娱乐'
+  const roomid = roomAndName.split(' - ')[0]; // '26630186'
+  const name = roomAndName.split(' - ')[1]; // '烈火游戏机娱乐'
 
   // 解析日期和时间
-  const filename = pathComponents[pathComponents.length - 1]; // 获取最后一个部分：文件名
-  const filenameParts = filename.split('_'); // 按下划线分割
-  const dateTimePart = filenameParts.slice(-1)[0].split('.')[0]; // 从文件名获取日期时间部分，去除扩展名
-  const datePart = dateTimePart.split('-').slice(0, 3).join('-'); // 获取日期部分 YYYY-MM-DD
-  const timePart = dateTimePart.slice(-6); // 获取时间部分 HHMMSS
-
-  // 转换为需要的格式
-  const year = datePart.split('-')[0];
-  const month = datePart.split('-')[1];
-  const day = datePart.split('-')[2];
-  const hour = timePart.slice(0, 2);
-  const minute = timePart.slice(2, 4);
-  const second = timePart.slice(4, 6);
+  const filename = relativeFilePath.split('/')[1]; // '街机烈火舞萌DX实时直播_26630186_2024-03-14-020708.mp4'
+  const dateTimePart = filename.split('_').pop().split('.')[0]; // '2024-03-14-020708'
+  const [year, month, day, rest] = dateTimePart.split('-'); // 提取日期和时间
+  const hour = rest.substring(0, 2);
+  const minute = rest.substring(2, 4);
+  const second = rest.substring(4, 6);
   const timeid = `${year}年${month}月${day}日${hour}时${minute}分${second}秒`;
 
-  // 组成无扩展名的文件路径
-  const filepathNoExtension = relativePathArray.join('/').slice(0, -4); // 去除文件扩展名
-
   console.log(`Room ID: ${roomid}, Name: ${name}, Time ID: ${timeid}`);
-  console.log(`File path without extension: ${filepathNoExtension}`);
-
+  console.log(`Relative File Path: ${relativeFilePath}`);
+  console.log(`File Path Without Extension: ${filepathNoExtension}`);
 
     /**
      * 上传指定格式的文件到rclone
