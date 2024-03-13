@@ -2,17 +2,13 @@ const dotenv = require("dotenv");
 dotenv.config()
 const fs = require("fs");
 const { parseString } = require("xml2js");
-const { spawn } = require("child_process");
 const moment = require("moment-timezone");
-const ffmpeg = require("fluent-ffmpeg");
 const rclone = require("rclone.js");
 const appriseNotice = require("./apprise")
 
 const rclonePath = process.env.RCLONE_PATH;
 const bilifilePath = process.env.BILI_FILE_PATH;
-const danmufcPath = process.env.DANMU_FC_PATH;
 const timezone = process.env.TZ;
-const convertFormat = process.env.CONVERT_FORMAT;
 const noticeFileFormat = process.env.NOTICE_FILE_FORMAT;
 const debug = process.env.DEBUG === "true";
 const uploadOrigin = process.env.UPLOAD_ORIGIN === "true";
@@ -79,98 +75,74 @@ async function processFile(filepath, roomid, name, fileopentime) {
     });
   }
 
-  /**
-   * 转换视频格式并上传到rclone
+    /**
+   * 上传mp4到rclone
    */
-  const convertPromise = new Promise((resolve, reject) => {
-    try {
-      const convert = new ffmpeg(`${bilifilePath}/${filepath}`);
-      debug && console.log("开始转换video格式");
-      convert
-        .save(`${bilifilePath}/${filepathNoExtension}.${convertFormat}`)
-        .videoCodec("copy")
-        .on("end", async () => {
-          console.log("转换video格式成功");
-          try {
-            if (uploadOrigin) {
-              debug && console.log("开始上传flv");
-              await rcUpload("flv");
-            }
-            debug && console.log(`开始上传${convertFormat}`);
-            await rcUpload(convertFormat, "flv");
-            resolve();
-          } catch (error) {
-            reject(error);
+    const mp4Promise = new Promise((resolve, reject) => {
+      try {
+          if (uploadOrigin) {
+              debug && console.log("开始上传mp4");
+              await rcUpload("mp4");
           }
-        });
-    } catch (err) {
-      console.error("转换封装格式失败，错误：", err);
-      reject(err);
-    }
-  });
-
-  /**
+              resolve();
+            } catch (error) {
+              console.error("上传失败，错误：", err);
+              reject(error);
+            }
+          });
+      }
+ 
+ /**
    * 转换弹幕格式并上传到rclone
    */
-  const danmakuPromise = new Promise((resolve, reject) => {
-    if (!processDanmu) {
-      resolve()
-      return
-    }
-    const danmakuConvert = `echo y | ${danmufcPath} -o ass "${bilifilePath}/${filepathNoExtension}.ass" -i xml "${bilifilePath}/${filepathNoExtension}.xml"`;
+ const danmakuPromise = new Promise((resolve, reject) => {
+  if (!processDanmu) {
+    resolve()
+    return
+  }
 
-    const stdioOption = debug ? "inherit" : "ignore";
-
-    const xml = fs.readFileSync(
-      `${bilifilePath}/${filepathNoExtension}.xml`,
-      "utf-8"
-    );
-
-    try {
-      parseString(xml, (err, result) => {
-        console.log(`弹幕数量：${result.i.d.length}`);
-      });
-      var danmakuExist = true;
-    } catch (err) {
-      console.log("无弹幕");
-      var danmakuExist = false;
-    }
-
-    const danmaku = spawn("sh", ["-c", danmakuConvert], {
-      cwd: bilifilePath,
-      stdio: stdioOption,
-    });
-
-    debug && console.log("开始转换弹幕格式");
-
-    danmaku.on("close", async (code) => {
-      if (code === 0 && danmakuExist) {
-        console.log("转换danmaku成功");
-        try {
-          if (uploadOrigin) {
-            debug && console.log("开始上传xml");
-            await rcUpload("xml");
-          }
-          debug && console.log("开始上传ass");
-          await rcUpload("ass", "xml");
-          resolve();
-        } catch (err) {
-          reject(err);
-        }
-      } else {
-        if (deleteLocal && !danmakuExist) {
-          debug && console.log("无弹幕输出，删除 xml");
-          deleteFile(`${bilifilePath}/${filepathNoExtension}.xml`);
-          return;
-        }
-        console.log(`转换弹幕格式失败，错误代码: ${code}`);
-        reject(`转换弹幕格式失败，错误代码: ${code}`);
-      }
-    });
-  });
+  const xml = fs.readFileSync(
+    `${bilifilePath}/${filepathNoExtension}.xml`,
+    "utf-8"
+  );
 
   try {
-    const results = await Promise.allSettled([convertPromise, danmakuPromise]);
+    parseString(xml, (err, result) => {
+      console.log(`弹幕数量：${result.i.d.length}`);
+    });
+    var danmakuExist = true;
+  } catch (err) {
+    console.log("无弹幕");
+    var danmakuExist = false;
+  }
+
+  danmaku.on("close", async (code) => {
+    if (code === 0 && danmakuExist) {
+      console.log("转换danmaku成功");
+      try {
+        if (uploadOrigin) {
+          debug && console.log("开始上传xml");
+          await rcUpload("xml");
+        }
+        resolve();
+      } catch (err) {
+        reject(err);
+      }
+    } else {
+      if (deleteLocal && !danmakuExist) {
+        debug && console.log("无弹幕输出，删除 xml");
+        deleteFile(`${bilifilePath}/${filepathNoExtension}.xml`);
+        return;
+      }
+      console.log(`转换弹幕格式失败，错误代码: ${code}`);
+      reject(`转换弹幕格式失败，错误代码: ${code}`);
+    }
+  });
+});
+
+
+  try {
+    const results = await Promise.allSettled([mp4Promise, danmakuPromise]);
     results.forEach((result) => {
       if (result.status === "fulfilled" && result.value) {
         debug && console.log(result.value);
@@ -184,6 +156,6 @@ async function processFile(filepath, roomid, name, fileopentime) {
     const banner = `BiliLive提醒: [${name}](https://live.bilibili.com/${roomid})的直播文件部分上传失败！⚠请及时查阅！`;
     appriseNotice(banner, text);
   }
-}
+
 
 module.exports = processFile;
