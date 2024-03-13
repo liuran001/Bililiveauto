@@ -7,7 +7,6 @@ const rclone = require("rclone.js");
 const appriseNotice = require("./apprise")
 
 const rclonePath = process.env.RCLONE_PATH;
-const bilifilePath = process.env.BILI_FILE_PATH;
 const timezone = process.env.TZ;
 const noticeFileFormat = process.env.NOTICE_FILE_FORMAT;
 const debug = process.env.DEBUG === "true";
@@ -51,7 +50,7 @@ async function processFile(filepath, roomid, name, fileopentime) {
   async function rcUpload(uploadFormat, originFormat) {
     debug &&
       console.log(`上传 ${uploadFormat} 至 ${rclonePath}/${roomid}-${name}/${timeid}/`);
-    const results = rclone.copy(`${bilifilePath}/${filepathNoExtension}.${uploadFormat}`, `${rclonePath}/${roomid}-${name}/${timeid}/`, {
+    const results = rclone.copy(`${filepathNoExtension}.${uploadFormat}`, `${rclonePath}/${roomid}-${name}/${timeid}/`, {
       "ignore-errors": true
     });
     results.stdout.on("data", (data) => {
@@ -64,9 +63,9 @@ async function processFile(filepath, roomid, name, fileopentime) {
       if (code === 0) {
         console.log(`上传 ${uploadFormat} 成功`);
         deleteLocal &&
-          deleteFile(`${bilifilePath}/${filepathNoExtension}.${uploadFormat}`);
+          deleteFile(`${filepathNoExtension}.${uploadFormat}`);
         if (!uploadOrigin && deleteLocal) {
-          deleteFile(`${bilifilePath}/${filepathNoExtension}.${originFormat}`);
+          deleteFile(`${filepathNoExtension}.${originFormat}`);
         }
         if (noticeFileUploaded && noticeFileFormat.includes(uploadFormat)) {
           appriseNotice(`BiliLive提醒:"${name}"的直播录像文件上传成功`, `文件名：${filepathNoExtension}.${uploadFormat}`)
@@ -102,7 +101,7 @@ async function processFile(filepath, roomid, name, fileopentime) {
   }
 
   const xml = fs.readFileSync(
-    `${bilifilePath}/${filepathNoExtension}.xml`,
+    `${filepathNoExtension}.xml`,
     "utf-8"
   );
 
@@ -131,7 +130,7 @@ async function processFile(filepath, roomid, name, fileopentime) {
     } else {
       if (deleteLocal && !danmakuExist) {
         debug && console.log("无弹幕输出，删除 xml");
-        deleteFile(`${bilifilePath}/${filepathNoExtension}.xml`);
+        deleteFile(`${filepathNoExtension}.xml`);
         return;
       }
       console.log(`转换弹幕格式失败，错误代码: ${code}`);
