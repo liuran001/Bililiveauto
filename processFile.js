@@ -32,18 +32,29 @@ function deleteFile(filePath) {
 /**
  * 处理直播录像文件
  * @param {string} filepath - 录像文件绝对路径
- * @param {string} roomid - 直播房间ID
- * @param {string} name - 直播主播名称
- * @param {string} fileopentime - 录像文件开始时间
  */
-async function processFile(filepath, roomid, name, fileopentime) {
-    // 从绝对路径获取相对路径
-    const relativePathArray = filepath.split('/').slice(-2); // 获取最后两个元素作为相对路径
-    const relativeFilePath = relativePathArray.join('/'); // 重新组合成相对路径字符串
-    const filepathNoExtension = relativeFilePath.slice(0, -4); // 去除文件扩展名
-    const timeid = moment(fileopentime)
-        .tz(timezone)
-        .format("YYYY年MM月DD日HH时mm分ss秒SSS");
+async function processFile(filepath) {
+  // 解析 roomid 和 name
+  const pathComponents = filepath.split('/');
+  const fileInfo = pathComponents[pathComponents.length - 2]; // 获取 'roomid - uname' 部分
+  const [roomid, name] = fileInfo.split(' - '); // 分别解析出 roomid 和 uname
+
+  // 解析日期和时间
+  const filename = pathComponents[pathComponents.length - 1]; // 获取最后一个部分：文件名
+  const filenameParts = filename.split('_'); // 按下划线分割
+  const dateString = filenameParts.slice(-1)[0]; // 获取日期时间字符串
+  const dateComponents = dateString.split('-'); // 按破折号分割
+  const [year, month, day] = dateComponents;
+  const [hours, minutes, seconds] = dateComponents[3].split('');
+  const timeid = `${year}年${month}月${day}日${hours.slice(0, 2)}时${minutes.slice(2, 4)}分${seconds.slice(4, 6)}秒`;
+
+  // 组成无扩展名的文件路径
+  const filepathNoExtension = filepath.split('/').slice(-2).join('/').slice(0, -4); // 去除文件扩展名
+
+  console.log(`Room ID: ${roomid}, Name: ${name}, Time ID: ${timeid}`);
+  console.log(`File path without extension: ${filepathNoExtension}`);
+
+  // 这里可以根据解析出的信息继续其他处理...
 
     /**
      * 上传指定格式的文件到rclone
