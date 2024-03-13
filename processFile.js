@@ -29,35 +29,29 @@ function deleteFile(filePath) {
     });
 }
 
-/**
- * 处理直播录像文件
- * @param {string} filepath - 录像文件绝对路径
- */
 async function processFile(filepath) {
   // 从绝对路径获取相对路径
-  const relativeFilePath = filepath.split('/').slice(-3).join('/'); // 保留文件名和它的上一级目录
+  const pathComponents = filepath.split('/'); // 分割整个文件路径
+  const relativeFilePath = pathComponents.slice(-3).join('/'); // 获取相对路径，包括文件名和上一级两级目录
 
   // 解析 roomid 和 name
-  const fileInfo = relativeFilePath.split('/')[0]; // 获取 'roomid - uname' 部分
-  const [roomid, name] = fileInfo.split(' - '); // 分别解析出 roomid 和 uname
+  const roomInfo = pathComponents[pathComponents.length - 2]; // 获取 'roomid - uname' 部分
+  const roomidMatch = roomInfo.match(/\b\d+\b/); // 正则表达式查找数字（roomid）
+  const roomid = roomidMatch ? roomidMatch[0] : 'Unknown'; // 提取 roomid 或使用 'Unknown'
+  const name = roomInfo.split(' - ').pop(); // 假设 name 是 ' - ' 后面的部分
 
   // 解析日期和时间
-  const filename = relativeFilePath.split('/').pop(); // 获取最后一个部分：文件名
-  const dateTimePart = filename.split('_').pop().split('.')[0]; // 从文件名获取日期时间部分，去除扩展名
-  const datePart = dateTimePart.substring(0, 10); // 获取日期部分 YYYY-MM-DD
-  const timePart = dateTimePart.substring(11); // 获取时间部分 HHMMSS
-
-  // 转换为需要的格式
-  const year = datePart.split('-')[0];
-  const month = datePart.split('-')[1];
-  const day = datePart.split('-')[2];
-  const hour = timePart.substring(0, 2);
-  const minute = timePart.substring(2, 4);
-  const second = timePart.substring(4, 6);
+  const filename = pathComponents.pop(); // 获取最后一个部分：文件名
+  const dateTimePart = filename.split('_').pop().replace('.mp4', ''); // 从文件名获取日期时间部分，去除扩展名
+  const [year, month, day, rest] = dateTimePart.split('-'); // 按破折号分割日期时间
+  const hour = rest.substring(0, 2);
+  const minute = rest.substring(2, 4);
+  const second = rest.substring(4, 6);
   const timeid = `${year}年${month}月${day}日${hour}时${minute}分${second}秒`;
 
   console.log(`Room ID: ${roomid}, Name: ${name}, Time ID: ${timeid}`);
   console.log(`Relative File Path: ${relativeFilePath}`);
+
 
     /**
      * 上传指定格式的文件到rclone
