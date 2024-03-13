@@ -16,8 +16,6 @@ app.post('/', function (req, res) {
   //读取body中的数据
   res.sendStatus(200);
   console.log(`Webhook: blrec POST 到达 事件：${type}`);
-  const { user_info, room_info } = data;
-  const text = `分区: ${room_info.parent_area_name} ${room_info.area_name}\n标题: [${room_info.title}](https://live.bilibili.com/${room_info.room_id})`;
 
   // 判断直播事件：开播、下播、录制、视频后处理完成等
   switch (type) {
@@ -50,6 +48,8 @@ app.post('/', function (req, res) {
     break;
     }
     case "LiveBeganEvent": {
+      const { user_info, room_info } = data;
+      const text = `分区: ${room_info.parent_area_name} ${room_info.area_name}\n标题: [${room_info.title}](https://live.bilibili.com/${room_info.room_id})`;
       const banner = `BiliLive提醒: "${user_info.name}"的直播开始了，快来看看吧！`;
       appriseNotice(banner, text);
   
@@ -76,7 +76,9 @@ app.post('/', function (req, res) {
       break;  
   }
     case "RecordingStartedEvent": {
-        const banner = `BiliLive提醒: "${user_info.name}"的直播已经开始录制了！\n如果赶不上直播, 也可以看回放哦!`;
+        const { room_info } = data;
+        const text = `分区: ${room_info.parent_area_name} ${room_info.area_name}\n标题: [${room_info.title}](https://live.bilibili.com/${room_info.room_id})`;
+        const banner = `BiliLive提醒: "${room_info.uid}"的直播已经开始录制了！\n如果赶不上直播, 也可以看回放哦!`;
         appriseNotice(banner, text);
 
         // 首先尝试插入，如果ID已存在，则忽略（因为使用了INSERT OR IGNORE）
@@ -103,6 +105,8 @@ app.post('/', function (req, res) {
         break;
     }
     case "LiveEndedEvent": {
+        const { user_info, room_info } = data;
+        const text = `分区: ${room_info.parent_area_name} ${room_info.area_name}\n标题: [${room_info.title}](https://live.bilibili.com/${room_info.room_id})`;
         const banner = `BiliLive提醒: "${user_info.name}"的直播结束了，欢迎下次再观看！`;
         appriseNotice(banner, text);
         break;
