@@ -30,15 +30,17 @@ function deleteFile(filePath) {
 }
 
 async function processFile(filepath) {
-  // 从绝对路径获取相对路径部分
-  const pathComponents = filepath.split('/');
-  const roomAndName = pathComponents[2]; // '26630186 - 烈火游戏机娱乐'
+  // 从绝对路径中移除前缀部分（例如 '/rec/'），保留之后的部分作为 relativeFilePath
+  const relativeFilePath = filepath.substring(filepath.indexOf('/rec/') + 5); // '+ 5' 是为了跳过 '/rec/' 部分
+
+  // 从 relativeFilePath 获取 roomid 和 name
+  const roomAndName = relativeFilePath.split('/')[0]; // '26630186 - 烈火游戏机娱乐'
   const roomid = roomAndName.split(' - ')[0]; // '26630186'
   const name = roomAndName.split(' - ')[1]; // '烈火游戏机娱乐'
 
   // 解析日期和时间
-  const filename = pathComponents[pathComponents.length - 1]; // 文件名部分
-  const dateTimePart = filename.split('_').slice(-1)[0].split('.')[0]; // '2024-03-14-020708'
+  const filename = relativeFilePath.split('/')[1]; // '街机烈火舞萌DX实时直播_26630186_2024-03-14-020708.mp4'
+  const dateTimePart = filename.split('_').pop().split('.')[0]; // '2024-03-14-020708'
   const [year, month, day, rest] = dateTimePart.split('-'); // 提取日期和时间
   const hour = rest.substring(0, 2);
   const minute = rest.substring(2, 4);
@@ -46,7 +48,7 @@ async function processFile(filepath) {
   const timeid = `${year}年${month}月${day}日${hour}时${minute}分${second}秒`;
 
   console.log(`Room ID: ${roomid}, Name: ${name}, Time ID: ${timeid}`);
-  console.log(`Relative File Path: ${filepath}`);
+  console.log(`Relative File Path: ${relativeFilePath}`);
 
     /**
      * 上传指定格式的文件到rclone
