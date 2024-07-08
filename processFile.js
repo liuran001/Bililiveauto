@@ -55,38 +55,47 @@ async function processFile(filepath) {
   console.log(`File Path Without Extension: ${filepathNoExtension}`);
 
     /**
-     * 上传指定格式的文件到rclone
-     * @param {string} uploadFormat - 待上传的文件格式
-     */
-    async function rcUpload(uploadFormat) {
-        debug && console.log(`上传 ${uploadFormat} 至 ${rclonePath}/${roomid}-${name}/${timeid}/`);
-        await new Promise((resolve, reject) => {
-            const results = rclone.copy(`${bilifilePath}/${filepathNoExtension}.${uploadFormat}`, `${rclonePath}/${roomid}-${name}/${timeid}/`, {
-                "ignore-errors": true
-            });
-            results.stdout.on("data", (data) => {
-                debug && console.log(`stdout: ${data}`);
-            });
-            results.stderr.on("data", (data) => {
-                console.error(`上传 ${uploadFormat} 失败，错误：${data}`);
-                reject(new Error(`上传 ${uploadFormat} 失败`));
-            });
-            results.on("close", (code) => {
-                if (code === 0) {
-                    console.log(`上传 ${uploadFormat} 成功`);
-                    if (deleteLocal) {
-                        deleteFile(`${bilifilePath}/${filepathNoExtension}.${uploadFormat}`);
-                    }
-                    if (noticeFileUploaded && noticeFileFormat.includes(uploadFormat)) {
-                        appriseNotice(`BiliLive提醒: "${name}"的直播录像文件上传成功`, `文件名：${filepathNoExtension}.${uploadFormat}`);
-                    }
-                    resolve();
-                } else {
-                    reject(new Error(`上传 ${uploadFormat} 失败，返回码：${code}`));
-                }
-            });
+ * 上传指定格式的文件到rclone
+ * @param {string} uploadFormat - 待上传的文件格式
+ */
+async function rcUpload(uploadFormat) {
+    debug && console.log(`上传 ${uploadFormat} 至 ${rclonePath}/${roomid}-${name}/${timeid}/`);
+    await new Promise((resolve, reject) => {
+        const results = rclone.copy(`${bilifilePath}/${filepathNoExtension}.${uploadFormat}`, `${rclonePath}/${roomid}-${name}/${timeid}/`, {
+            "ignore-errors": true
         });
-    }
+        results.stdout.on("data", (data) => {
+            debug && console.log(`stdout: ${data}`);
+        });
+        results.stderr.on("data", (data) => {
+            console.error(`上传 ${uploadFormat} 失败，错误：${data}`);
+            reject(new Error(`上传 ${uploadFormat} 失败`));
+        });
+        results.on("close", (code) => {
+            if (code === 0) {
+                console.log(`上传 ${uploadFormat} 成功`);
+                if (deleteLocal) {
+                    deleteFile(`${bilifilePath}/${filepathNoExtension}.${uploadFormat}`);
+                }
+                if (noticeFileUploaded && noticeFileFormat.includes(uploadFormat)) {
+                    const encodedRoomid = encodeURIComponent(`${roomid}-${name}`);
+                    const encodedTimeid = encodeURIComponent(timeid);
+                    const encodedFilename = encodeURIComponent(`${filepathNoExtension}.${uploadFormat}`);
+                    const fileUrl = `https://file.obdo.cc/B%E7%AB%99%E5%BD%95%E6%92%AD/${encodedRoomid}/${encodedTimeid}/${encodedFilename}`;
+                    
+                    appriseNotice(
+                        `BakaREC 提醒: "${name}"的直播录像文件上传成功`,
+                        `文件名：${roomid}-${name}/${timeid}/${filepathNoExtension}.${uploadFormat}\n录像链接：${fileUrl}\n文件更新有延迟，如果打不开请等待十分钟哦~\n#id_${roomid} #上传完成`
+                    );
+                }
+                resolve();
+            } else {
+                reject(new Error(`上传 ${uploadFormat} 失败，返回码：${code}`));
+            }
+        });
+    });
+}
+
 
     // 上传mp4文件
     try {
