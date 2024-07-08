@@ -104,7 +104,7 @@ async function rcUpload(uploadFormat) {
         await rcUpload('xml');
     } catch (error) {
         console.error(`上传文件失败：${error.message}`);
-        const text = `文件路径: ${roomid}-${name}/${timeid}`;
+        const text = `文件路径: ${roomid}-${name}/${timeid}\n#id_${roomid} #上传失败`;
         const banner = `BiliLive提醒: [${name}](https://live.bilibili.com/${roomid})的直播文件部分上传失败！⚠请及时查阅！`;
         appriseNotice(banner, text);
     }
