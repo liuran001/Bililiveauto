@@ -31,7 +31,7 @@ function deleteFile(filePath) {
 
 async function processFile(filepath) {
   // 从绝对路径中移除前缀部分（例如 '/rec/'），保留之后的部分作为 relativeFilePath
-  const relativeFilePath = filepath.substring(filepath.indexOf('/rec/') + 5); // '+ 5' 是为了跳过 '/rec/' 部分
+  const relativeFilePath = filepath.substring(filepath.indexOf('/recfiles/') + 10); // '+ 5' 是为了跳过 '/rec/' 部分
 
   // 移除文件扩展名来获取 filepathNoExtension
   const filepathNoExtension = relativeFilePath.split('.').slice(0, -1).join('.'); // 移除最后的扩展名部分
