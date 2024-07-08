@@ -80,12 +80,13 @@ async function rcUpload(uploadFormat) {
                 if (noticeFileUploaded && noticeFileFormat.includes(uploadFormat)) {
                     const encodedRoomid = encodeURIComponent(`${roomid}-${name}`);
                     const encodedTimeid = encodeURIComponent(timeid);
-                    const encodedFilename = encodeURIComponent(`${filepathNoExtension}.${uploadFormat}`);
+                    const [_, filepathPart] = filepathNoExtension.split('/', 2);
+                    const encodedFilename = encodeURIComponent(`${filepathPart}.${uploadFormat}`);
                     const fileUrl = `https://file.obdo.cc/B%E7%AB%99%E5%BD%95%E6%92%AD/${encodedRoomid}/${encodedTimeid}/${encodedFilename}`;
                     
                     appriseNotice(
                         `BakaREC 提醒: "${name}"的直播录像文件上传成功`,
-                        `文件名：${roomid}-${name}/${timeid}/${filepathNoExtension}.${uploadFormat}\n录像链接：${fileUrl}\n文件更新有延迟，如果打不开请等待十分钟哦~\n#id_${roomid} #上传完成`
+                        `文件名：${roomid}-${name}/${timeid}/${filepathPart}.${uploadFormat}\n录像链接：${fileUrl}\n文件更新有延迟，如果打不开请等待十分钟哦~\n#id_${roomid} #上传完成`
                     );
                 }
                 resolve();
